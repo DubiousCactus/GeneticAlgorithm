@@ -50,6 +50,7 @@ float score(chromosome c) {
 /* Mean objective function value over population */
 float mean(chromosome *generation, int size) {
 
+    /* TODO: Optimize by caching the mean for the current generation */
     float mean = 0;
 
     for (int i = 0; i < size; i++)
@@ -61,8 +62,9 @@ float mean(chromosome *generation, int size) {
 }
 
 /* Objective score function: score / mean */
-float fitness() {
+float fitness(chromosome c, chromosome *generation, int generationSize) {
 
+    return score(c) / mean(generation, generationSize);
 }
 
 int main() {
