@@ -1,4 +1,11 @@
+/* Solving the traveling salesman problem using a genetic algorithm.
+ * Author: Theo Morales <theo.morales.fr@gmail.com>
+ * 2017
+*/
+
 #include <stdio.h>
+#include <math.h>
+
 
 #define POPULATION_SIZE 100
 #define GENERATION_SIZE 15
@@ -10,7 +17,7 @@ typedef struct {
     int binaryIndex[3];
 } city;
 
-typedef enum {
+typedef enum cities {
     PARIS = (city) { .x = 4, .y = 6, .binaryIndex = { 0, 0, 1 } },
     REIMS = (city) { .x = 7, .y = 7, .binaryIndex = { 0, 1, 0 } },
     LYON = (city) { .x = 6, .y = 14, .binaryIndex = { 0, 1, 1 } },
@@ -25,6 +32,21 @@ typedef struct {
     cities genes[7];
 } chromosome;
 
+
+/* Objective function: total length of the trip */
+float score(chromosome c) {
+
+    float score = 0;
+
+    for (int i =  1; i < sizeof(c.genes) - 1; i++) {
+        score += sqrt(
+                pow(c.genes[i].x - c.genes[i - 1].x, 2)
+                + pow(c.genes[i].y - c.genes[i - 1].y, 2)
+        );
+    }
+
+    return score;
+}
 
 /* Mean objective function value over population */
 float mean() {
