@@ -32,7 +32,6 @@ typedef struct {
     cities genes[7];
 } chromosome;
 
-
 /* Objective function: total length of the trip */
 float score(chromosome c) {
 
@@ -49,8 +48,16 @@ float score(chromosome c) {
 }
 
 /* Mean objective function value over population */
-float mean() {
+float mean(chromosome *generation, int size) {
 
+    float mean = 0;
+
+    for (int i = 0; i < size; i++)
+        mean += score(generation[i]);
+
+    mean /= size;
+
+    return mean;
 }
 
 /* Objective score function: score / mean */
