@@ -25,7 +25,6 @@ typedef struct {
 
 
 const city cities[8] = {
-    { .x = 3, .y = 1, .binaryIndex = { 0, 0, 0}, .name = "Lille" },
     { .x = 4, .y = 6, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
     { .x = 7, .y = 7, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
     { .x = 6, .y = 14, .binaryIndex = { 0, 1, 1 }, .name =  "Lyon" },
@@ -36,10 +35,11 @@ const city cities[8] = {
 };
 
 /* Describes the order to visit cities:
- * A gene is a 3-bit array, a chromosome contains 8 genes for the 8 cities
+ * A gene is a 3-bit array, a chromosome contains 8 genes for the 7 cities + the first one
  * */
 typedef struct {
     int genes[8][GENE_SIZE];
+    float fitness;
 } chromosome;
 
 
@@ -120,10 +120,11 @@ int main() {
     chromosome population[POPULATION_SIZE];
     chromosome generation[GENERATION_SIZE];
 
-    printf("* Generating population.... (&d CANDIDATES)\n", POPULATION_SIZE);
+    printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);
 
     for (int i = 0; i < POPULATION_SIZE; i++) {
-        chromosome c = { 0 };
+        chromosome c;
+        c.fitness = 0;
 
         for (int i = 0; i < 8; i++)
             make_gene(c.genes[i]);
@@ -131,7 +132,7 @@ int main() {
         population[i] = c;
     }
 
-    /* While ITERATIONS-- */
+
     int iteration = ITERATIONS;
 
     while(iteration--) {
@@ -142,6 +143,46 @@ int main() {
 
         /* Select GENERATION_SIZE individuals from population, based on their fitness or randomly */
         printf("* Selecting %d individuals from generation %d...", GENERATION_SIZE, ITERATIONS - iteration);
+
+        if (iteration == ITERATIONS - 1) { //Select from population if first iteration
+
+            for (int i = 0; i < GENERATION_SIZE; i++) {
+                for (int j = 0; j < POPULATION_SIZE; j++) {
+                    float wheel = (rand()%100) / 100;
+
+                    /* Need to make sure that the fitness is under the form: 0.XX
+                     * and that the right comparison sign is used
+                     */
+                    if ((population[j].fitness <= 0.5 && wheel <= population[j].fitness)
+                        || (population[j].fitness > 0.5 && wheel > population[j].fitness)){
+
+                        generation[i] = population[j];
+                    }
+                }
+            }
+
+        } else { //Select from current generation
+
+            chromosome nextGeneration[GENERATION_SIZE] = {0};
+
+            for (int i = 0; i < GENERATION_SIZE; i++) {
+                float wheel = (rand()%100) / 100;
+
+                /* Need to make sure that the fitness is under the form: 0.XX
+                     * and that the right comparison sign is used
+                     */
+                if ((generation[i].fitness <= 0.5 && wheel <= generation[i].fitness)
+                    || (generation[i].fitness > 0.5 && wheel > generation[i].fitness)){
+
+                    nextGeneration[i] = generation[i];
+                }
+            }
+
+            /* Kill and replace previous generation */
+            for (int i = 0; i < GENERATION_SIZE; i++)
+                generation[i] = nextGeneration[i];
+        }
+
 
         /* Crossover from the selection */
 
