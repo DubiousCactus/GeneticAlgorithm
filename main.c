@@ -11,13 +11,16 @@
 #define GENERATION_SIZE 15
 #define ITERATIONS 50
 
+
 typedef struct {
     int x;
     int y;
     int binaryIndex[3];
+    char *name;
 } city;
 
-typedef enum cities {
+/*
+enum cities {
     PARIS = (city) { .x = 4, .y = 6, .binaryIndex = { 0, 0, 1 } },
     REIMS = (city) { .x = 7, .y = 7, .binaryIndex = { 0, 1, 0 } },
     LYON = (city) { .x = 6, .y = 14, .binaryIndex = { 0, 1, 1 } },
@@ -25,12 +28,48 @@ typedef enum cities {
     NANTES = (city) { .x = 2, .y = 9, .binaryIndex = { 1, 0, 1 } },
     LA_ROCHELLE = (city) { .x = 1, .y = 11, .binaryIndex = { 1, 1, 0 } },
     BORDEAUX = (city) { .x = 3, .y = 12, .binaryIndex = { 1, 1, 1 } }
-} cities;
+};*/
 
-/* Describes the order to visit cities */
+const city cities[7] = {
+    { .x = 4, .y = 6, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
+    { .x = 7, .y = 7, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
+    { .x = 6, .y = 14, .binaryIndex = { 0, 1, 1 }, .name =  "Lyon" },
+    { .x = 10, .y = 22, .binaryIndex = { 1, 0, 0 }, .name = "Marseille" },
+    { .x = 2, .y = 9, .binaryIndex = { 1, 0, 1 }, .name = "Nantes" },
+    { .x = 1, .y = 11, .binaryIndex = { 1, 1, 0 }, .name = "La Rochelle" },
+    { .x = 3, .y = 12, .binaryIndex = { 1, 1, 1 }, .name = "Bordeaux" }
+};
+
+/* Describes the order to visit cities:
+ * A gene is a 3-bit array, a chromosome contains 7 genes for the 7 cities
+ * */
 typedef struct {
-    cities genes[7];
+    int genes[7][3];
 } chromosome;
+
+
+
+int bin_to_dec(char *bin, int length) {
+
+    int dec = 0;
+
+    for (int i = 0; i < length; i ++)
+        dec += bin[i] * pow(2, (length - 1 - i));
+
+    return dec;
+}
+
+
+/* Map a gene from its binary index to the corresponding city
+ * and return its coordinates
+ */
+int * gene_coord(int gene[3]) {
+
+    int coord[2] = { 0, 0 };
+
+    
+
+}
 
 /* Objective function: total length of the trip */
 float score(chromosome c) {
