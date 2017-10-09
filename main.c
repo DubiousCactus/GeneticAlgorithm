@@ -132,6 +132,10 @@ int main() {
         population[i] = c;
     }
 
+    /* Calculate fitness for each candidate in the population */
+    for (int i = 0; i < POPULATION_SIZE; i++)
+        population[i].fitness = fitness(population[i], population, POPULATION_SIZE);
+
 
     int iteration = ITERATIONS;
 
