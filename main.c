@@ -30,7 +30,8 @@ enum cities {
     BORDEAUX = (city) { .x = 3, .y = 12, .binaryIndex = { 1, 1, 1 } }
 };*/
 
-const city cities[7] = {
+const city cities[8] = {
+    { .x = 3, .y = 1, .binaryIndex = { 0, 0, 0}, .name = "Lille" },
     { .x = 4, .y = 6, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
     { .x = 7, .y = 7, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
     { .x = 6, .y = 14, .binaryIndex = { 0, 1, 1 }, .name =  "Lyon" },
@@ -41,15 +42,15 @@ const city cities[7] = {
 };
 
 /* Describes the order to visit cities:
- * A gene is a 3-bit array, a chromosome contains 7 genes for the 7 cities
+ * A gene is a 3-bit array, a chromosome contains 8 genes for the 8 cities
  * */
 typedef struct {
-    int genes[7][3];
+    int genes[8][3];
 } chromosome;
 
 
 
-int bin_to_dec(char *bin, int length) {
+int bin_to_dec(int *bin, int length) {
 
     int dec = 0;
 
@@ -67,8 +68,10 @@ int * gene_coord(int gene[3]) {
 
     int coord[2] = { 0, 0 };
 
-    
+    coord[0] = cities[bin_to_dec(gene, 3)].x;
+    coord[1] = cities[bin_to_dec(gene, 3)].y;
 
+    return coord;
 }
 
 /* Objective function: total length of the trip */
