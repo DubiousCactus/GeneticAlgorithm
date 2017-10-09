@@ -1,4 +1,5 @@
-/* Solving the traveling salesman problem using a genetic algorithm.
+/*
+ * Solving the traveling salesman problem using a genetic algorithm.
  * Author: Theo Morales <theo.morales.fr@gmail.com>
  * 2017
 */
@@ -12,6 +13,8 @@
 #define GENERATION_SIZE 15
 #define ITERATIONS 50
 #define GENE_SIZE 3
+#define CROSSOVER_MODE "SP" // SP:  Single Point, 2P: Two Point, U: Uniform
+#define MUTATION_RATE 0.1
 
 #define GENE_X(gene) gene_coord(gene)[0]
 #define GENE_Y(gene) gene_coord(gene)[1]
@@ -148,6 +151,7 @@ int main() {
         /* Select GENERATION_SIZE individuals from population, based on their fitness or randomly */
         printf("* Selecting %d individuals from generation %d...", GENERATION_SIZE, ITERATIONS - iteration);
 
+        /* TODO: Clean up this mess and refactor this spaghetti code */
         if (iteration == ITERATIONS - 1) { //Select from population if first iteration
 
             for (int i = 0; i < GENERATION_SIZE; i++) {
