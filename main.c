@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 
 #define POPULATION_SIZE 100
@@ -58,7 +59,8 @@ int bin_to_dec(int *bin) {
 void make_gene(int *gene) {
 
     for (int i = 0; i < GENE_SIZE; i++) {
-
+        //Currently generates both valid and invalid genes (same city 2+ times)
+        gene[i] = rand() % 2;
     }
 }
 
@@ -118,8 +120,10 @@ int main() {
     chromosome population[POPULATION_SIZE];
     chromosome generation[GENERATION_SIZE];
 
+    printf("* Generating population.... (&d CANDIDATES)\n", POPULATION_SIZE);
+
     for (int i = 0; i < POPULATION_SIZE; i++) {
-        chromosome c;
+        chromosome c = { 0 };
 
         for (int i = 0; i < 8; i++)
             make_gene(c.genes[i]);
@@ -127,17 +131,24 @@ int main() {
         population[i] = c;
     }
 
-    /* While ITERATIONS--
+    /* While ITERATIONS-- */
+    int iteration = ITERATIONS;
 
-        /* Generate random population */
+    while(iteration--) {
+
+        system("clear");
+        printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);
+        printf("* Iteration: %d", iteration);
 
         /* Select GENERATION_SIZE individuals from population, based on their fitness or randomly */
+        printf("* Selecting %d individuals from generation %d...", GENERATION_SIZE, ITERATIONS - iteration);
 
         /* Crossover from the selection */
 
         /* Mutation from the offsprings */
 
         /* Replace generation by mutated offsprings */
+    }
 
     return 0;
 }
