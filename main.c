@@ -10,6 +10,7 @@
 #define POPULATION_SIZE 100
 #define GENERATION_SIZE 15
 #define ITERATIONS 50
+#define GENE_SIZE 3
 
 #define GENE_X(gene) gene_coord(gene)[0]
 #define GENE_Y(gene) gene_coord(gene)[1]
@@ -37,31 +38,40 @@ const city cities[8] = {
  * A gene is a 3-bit array, a chromosome contains 8 genes for the 8 cities
  * */
 typedef struct {
-    int genes[8][3];
+    int genes[8][GENE_SIZE];
 } chromosome;
 
 
 
-int bin_to_dec(int *bin, int length) {
+int bin_to_dec(int *bin) {
 
     int dec = 0;
 
-    for (int i = 0; i < length; i ++)
-        dec += bin[i] * pow(2, (length - 1 - i));
+    for (int i = 0; i < GENE_SIZE; i ++)
+        dec += bin[i] * pow(2, (GENE_SIZE - 1 - i));
 
     return dec;
+}
+
+
+/* Generate bits to fill a gene */
+void make_gene(int *gene) {
+
+    for (int i = 0; i < GENE_SIZE; i++) {
+
+    }
 }
 
 
 /* Map a gene from its binary index to the corresponding city
  * and return its coordinates
  */
-int * gene_coord(int gene[3]) {
+int * gene_coord(int gene[GENE_SIZE]) {
 
     int coord[2] = { 0, 0 };
 
-    coord[0] = cities[bin_to_dec(gene, 3)].x;
-    coord[1] = cities[bin_to_dec(gene, 3)].y;
+    coord[0] = cities[bin_to_dec(gene)].x;
+    coord[1] = cities[bin_to_dec(gene)].y;
 
     return coord;
 }
@@ -101,10 +111,21 @@ float fitness(chromosome c, chromosome *generation, int generationSize) {
     return score(c) / mean(generation, generationSize);
 }
 
+
+
 int main() {
 
     chromosome population[POPULATION_SIZE];
     chromosome generation[GENERATION_SIZE];
+
+    for (int i = 0; i < POPULATION_SIZE; i++) {
+        chromosome c;
+
+        for (int i = 0; i < 8; i++)
+            make_gene(c.genes[i]);
+
+        population[i] = c;
+    }
 
     /* While ITERATIONS--
 
