@@ -11,6 +11,8 @@
 #define GENERATION_SIZE 15
 #define ITERATIONS 50
 
+#define GENE_X(gene) gene_coord(gene)[0]
+#define GENE_Y(gene) gene_coord(gene)[1]
 
 typedef struct {
     int x;
@@ -81,8 +83,8 @@ float score(chromosome c) {
 
     for (int i =  1; i < sizeof(c.genes) - 1; i++) {
         score += sqrt(
-                pow(c.genes[i].x - c.genes[i - 1].x, 2)
-                + pow(c.genes[i].y - c.genes[i - 1].y, 2)
+                pow(GENE_X(c.genes[i]) - GENE_X(c.genes[i - 1]), 2)
+                + pow(GENE_Y(c.genes[i]) - GENE_Y(c.genes[i - 1]), 2)
         );
     }
 
