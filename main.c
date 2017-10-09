@@ -21,16 +21,6 @@ typedef struct {
     char *name;
 } city;
 
-/*
-enum cities {
-    PARIS = (city) { .x = 4, .y = 6, .binaryIndex = { 0, 0, 1 } },
-    REIMS = (city) { .x = 7, .y = 7, .binaryIndex = { 0, 1, 0 } },
-    LYON = (city) { .x = 6, .y = 14, .binaryIndex = { 0, 1, 1 } },
-    MARSEILLE = (city) { .x = 10, .y = 22, .binaryIndex = { 1, 0, 0 } },
-    NANTES = (city) { .x = 2, .y = 9, .binaryIndex = { 1, 0, 1 } },
-    LA_ROCHELLE = (city) { .x = 1, .y = 11, .binaryIndex = { 1, 1, 0 } },
-    BORDEAUX = (city) { .x = 3, .y = 12, .binaryIndex = { 1, 1, 1 } }
-};*/
 
 const city cities[8] = {
     { .x = 3, .y = 1, .binaryIndex = { 0, 0, 0}, .name = "Lille" },
