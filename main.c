@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <memory.h>
 
 
 #define POPULATION_SIZE 100
@@ -37,7 +38,8 @@ const city cities[8] = {
     { .x = 3, .y = 12, .binaryIndex = { 1, 1, 1 }, .name = "Bordeaux" }
 };
 
-/* Describes the order to visit cities:
+/*
+ * Describes the order to visit cities:
  * A gene is a 3-bit array, a chromosome contains 8 genes for the 7 cities + the first one
  * */
 typedef struct {
@@ -68,7 +70,8 @@ void make_gene(int *gene) {
 }
 
 
-/* Map a gene from its binary index to the corresponding city
+/*
+ * Map a gene from its binary index to the corresponding city
  * and return its coordinates
  */
 int * gene_coord(int gene[GENE_SIZE]) {
@@ -117,7 +120,6 @@ float fitness(chromosome c, chromosome *generation, int generationSize) {
 }
 
 /* Select one chromosome from the given generation */
-
 chromosome select_chromosome(chromosome *generation, int size) {
 
     chromosome c = { 0 };
@@ -133,6 +135,47 @@ chromosome select_chromosome(chromosome *generation, int size) {
     }
 
     return c;
+}
+
+/*
+ * Crossover of two randomly selected chromosomes from the given population
+ * Returns the offspring
+ */
+chromosome make_random_offspring(chromosome *candidates, int size) {
+
+    chromosome dad, mom, kid;
+    kid.fitness = 0;
+
+    int firstPick = random() % size;
+    int secondPick = random() % size;
+
+    dad = candidates[firstPick];
+
+    while (secondPick == firstPick)
+        secondPick = random() % size;
+
+    mom = candidates[secondPick];
+
+
+    if (strcmp(CROSSOVER_MODE, "SP") == 0) {
+        /* Single point crossover */
+        int crossover_point = 1 + rand() % 7;
+
+        for (int i = 0; i < crossover_point; i++)
+            for (int j = 0; j < GENE_SIZE; j++)
+                kid.genes[i][j] = dad.genes[i][j];
+
+        for (int i = crossover_point; i < 8; i++)
+            for (int j = 0; j < GENE_SIZE; j++)
+                kid.genes[i][j] = mom.genes[i][j];
+
+    } else if (strcmp(CROSSOVER_MODE, "DP") == 0) {
+        /* Double point crossover */
+
+    } else if (strcmp(CROSSOVER_MODE, "U") == 0) {
+        /* Uniform crossover */
+
+    }
 }
 
 
