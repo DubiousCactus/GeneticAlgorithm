@@ -179,6 +179,10 @@ chromosome make_random_offspring(chromosome *candidates, int size) {
 }
 
 
+chromosome mutate(chromosome c) {
+
+}
+
 
 int main() {
 
@@ -217,21 +221,32 @@ int main() {
         /* Select GENERATION_SIZE individuals from population, based on their fitness or randomly */
         printf("* Selecting %d individuals from generation %d...", GENERATION_SIZE, ITERATIONS - iteration);
 
-        chromosome nextGeneration[GENERATION_SIZE] = {0};
+        chromosome nextGeneration[GENERATION_SIZE] = {0}; //The offsprings of the (intermediate) generation
 
-        /* Select new generation */
+        /* Crossover and mutate from the selection */
         for (int i = 0; i < GENERATION_SIZE; i++)
-            nextGeneration[i] = select_chromosome(generation, GENERATION_SIZE);
+            nextGeneration[i] = mutate(make_random_offspring(generation, GENERATION_SIZE));
 
-        /* Kill and replace previous generation */
+        /*
+         * Update the fitness of the offsprings
+         * Needs to be done after the crossover is complete because the fitness
+         * is calculated depending on the mean of the whole generation
+         */
         for (int i = 0; i < GENERATION_SIZE; i++)
-            generation[i] = nextGeneration[i];
+            nextGeneration[i].fitness = fitness(nextGeneration[i], nextGeneration, GENERATION_SIZE);
 
-        /* Crossover from the selection */
+        chromosome selection[GENERATION_SIZE] = {0}; //Selection of nextGeneration (offsprings) + base generation
 
-        /* Mutation from the offsprings */
+        /*
+         * Select new generation, based on the offsprings and the parent generation,
+         * and the fitness of their chromosomes
+         */
+        for (int i = 0; i < GENERATION_SIZE / 2; i++)
+            selection[i] = select_chromosome(generation, GENERATION_SIZE);
 
-        /* Replace generation by mutated offsprings */
+
+        for (int i = GENERATION_SIZE / 2; i < GENERATION_SIZE; i++)
+            selection[i] = select_chromosome(generation, GENERATION_SIZE);
     }
 
     return 0;
