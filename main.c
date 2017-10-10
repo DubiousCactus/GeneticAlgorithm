@@ -13,6 +13,7 @@
 #define POPULATION_SIZE 100
 #define GENERATION_SIZE 15
 #define ITERATIONS 50
+#define NB_GENES 8
 #define GENE_SIZE 3
 #define CROSSOVER_MODE "SP" // SP:  Single Point, 2P: Two Point, U: Uniform
 #define MUTATION_RATE 0.1
@@ -49,7 +50,7 @@ typedef struct {
 
 
 
-int bin_to_dec(int *bin) {
+int bin_to_dec(int bin[GENE_SIZE]) { //TODO: Fix bug - received bin is not an array
 
     int dec = 0;
 
@@ -74,14 +75,12 @@ void make_gene(int *gene) {
  * Map a gene from its binary index to the corresponding city
  * and return its coordinates
  */
-int * gene_coord(int gene[GENE_SIZE]) {
+void get_gene_coord(int gene[], int coord[]) { //TODO: Fix bug - received bin is not an array
 
-    int coord[2] = { 0, 0 };
+    int geneValue = bin_to_dec(gene);
 
-    coord[0] = cities[bin_to_dec(gene)].x;
-    coord[1] = cities[bin_to_dec(gene)].y;
-
-    return coord;
+    coord[0] = cities[geneValue].x;
+    coord[1] = cities[geneValue].y;
 }
 
 /* Objective function: total length of the trip */
@@ -89,10 +88,15 @@ float score(chromosome c) {
 
     float score = 0;
 
-    for (int i =  1; i < sizeof(c.genes) - 1; i++) {
+    for (int i =  1; i < NB_GENES; i++) {
+        int geneCoord[2] = {0}, prevGeneCoord[2] = {0};
+
+        get_gene_coord(c.genes[i], geneCoord);
+        get_gene_coord(c.genes[i - 1], prevGeneCoord);
+
         score += sqrt(
-                pow(GENE_X(c.genes[i]) - GENE_X(c.genes[i - 1]), 2)
-                + pow(GENE_Y(c.genes[i]) - GENE_Y(c.genes[i - 1]), 2)
+                pow(fabs(geneCoord[0] - prevGeneCoord[0]), 2)
+                + pow(fabs(geneCoord[1] - prevGeneCoord[1]), 2)
         );
     }
 
@@ -171,16 +175,17 @@ chromosome make_random_offspring(chromosome *candidates, int size) {
 
     } else if (strcmp(CROSSOVER_MODE, "DP") == 0) {
         /* Double point crossover */
+        //TODO
 
     } else if (strcmp(CROSSOVER_MODE, "U") == 0) {
         /* Uniform crossover */
-
+        //TODO
     }
 }
 
 
 chromosome mutate(chromosome c) {
-
+    //TODO: Implement the mutation
 }
 
 
@@ -225,7 +230,7 @@ int main() {
 
         /* Crossover and mutate from the selection */
         for (int i = 0; i < GENERATION_SIZE; i++)
-            nextGeneration[i] = mutate(make_random_offspring(generation, GENERATION_SIZE));
+            nextGeneration[i] = make_random_offspring(generation, GENERATION_SIZE);
 
         /*
          * Update the fitness of the offsprings
