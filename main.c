@@ -269,8 +269,12 @@ int main() {
          * Select new generation, based on the offsprings and the parent generation,
          * and the fitness of their chromosomes
          */
-        select_chromosomes(selection, GENERATION_SIZE / 2, generation, GENERATION_SIZE);
+        select_chromosomes(selection, GENERATION_SIZE / 2, nextGeneration, GENERATION_SIZE);
         select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
+
+        /* Replace generation by the selection -> cross-breed of old generation + next generation */
+        for (int i = 0; i < GENERATION_SIZE; i++)
+            generation[i] = selection[i];
     }
 
     return 0;
