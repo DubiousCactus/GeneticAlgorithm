@@ -201,6 +201,8 @@ chromosome make_random_offspring(chromosome *candidates, int size) {
         /* Uniform crossover */
         //TODO
     }
+
+    return kid;
 }
 
 
