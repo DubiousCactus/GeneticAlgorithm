@@ -8,6 +8,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <time.h>
 
 
 #define POPULATION_SIZE 100
@@ -49,8 +50,9 @@ typedef struct {
 } chromosome;
 
 
+float maxFitness = 0;
 
-int bin_to_dec(int bin[GENE_SIZE]) { //TODO: Fix bug - received bin is not an array
+int bin_to_dec(int bin[GENE_SIZE]) {
 
     int dec = 0;
 
@@ -75,7 +77,7 @@ void make_gene(int *gene) {
  * Map a gene from its binary index to the corresponding city
  * and return its coordinates
  */
-void get_gene_coord(int gene[], int coord[]) { //TODO: Fix bug - received bin is not an array
+void get_gene_coord(int gene[], int coord[]) {
 
     int geneValue = bin_to_dec(gene);
 
@@ -120,26 +122,44 @@ float mean(chromosome *generation, int size) {
 /* Objective score function: score / mean */
 float fitness(chromosome c, chromosome *generation, int generationSize) {
 
-    return score(c) / mean(generation, generationSize);
+    float fitness = score(c) / mean(generation, generationSize);
+
+    /* Store the max fitness of current generation to adapt our random pick */
+    if (fitness > maxFitness)
+        maxFitness = fitness;
+
+    return fitness;
 }
 
-/* Select one chromosome from the given generation */
-chromosome select_chromosome(chromosome *generation, int size) {
+
+float rand_a_b(float a, float b) {
+
+    return (rand() / (float) RAND_MAX) * (b - a) + a;
+}
+
+
+void select_chromosomes(chromosome generation[], int toSize, chromosome population[], int fromSize) {
 
     chromosome c = { 0 };
+    int picked = 0;
+    srand((unsigned)time(NULL));
 
-    for (int i = 0; i < size; i++) {
-        float wheel = (rand()%100) / 100;
+    for (int i = 0; i < toSize; i++) {
+        picked = 0;
 
-        /* Need to make sure that the fitness is under the form: 0.XX */
-        if (wheel <= generation[i].fitness) {
-            c = generation[i];
-            break;
+        while (!picked) {
+            for (int j = i; j < fromSize; j++) {
+                float wheel = rand_a_b(0, maxFitness);
+
+                if (wheel <= population[j].fitness) {
+                    generation[i] = population[j];
+                    picked = 1;
+                }
+            }
         }
     }
-
-    return c;
 }
+
 
 /*
  * Crossover of two randomly selected chromosomes from the given population
@@ -211,8 +231,7 @@ int main() {
         population[i].fitness = fitness(population[i], population, POPULATION_SIZE);
 
     /* Selecting original candidates */
-    for (int i = 0; i < GENERATION_SIZE; i++)
-        generation[i] = select_chromosome(population, POPULATION_SIZE);
+    select_chromosomes(generation, GENERATION_SIZE, population, POPULATION_SIZE);
 
 
     int iteration = ITERATIONS;
@@ -227,6 +246,8 @@ int main() {
         printf("* Selecting %d individuals from generation %d...", GENERATION_SIZE, ITERATIONS - iteration);
 
         chromosome nextGeneration[GENERATION_SIZE] = {0}; //The offsprings of the (intermediate) generation
+
+        maxFitness = 0;
 
         /* Crossover and mutate from the selection */
         for (int i = 0; i < GENERATION_SIZE; i++)
@@ -246,12 +267,8 @@ int main() {
          * Select new generation, based on the offsprings and the parent generation,
          * and the fitness of their chromosomes
          */
-        for (int i = 0; i < GENERATION_SIZE / 2; i++)
-            selection[i] = select_chromosome(generation, GENERATION_SIZE);
-
-
-        for (int i = GENERATION_SIZE / 2; i < GENERATION_SIZE; i++)
-            selection[i] = select_chromosome(generation, GENERATION_SIZE);
+        select_chromosomes(selection, GENERATION_SIZE / 2, generation, GENERATION_SIZE);
+        select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
     }
 
     return 0;
