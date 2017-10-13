@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <time.h>
+#include <zconf.h>
 
 
 #define POPULATION_SIZE 100
@@ -207,7 +208,24 @@ chromosome make_random_offspring(chromosome *candidates, int size) {
 
 
 chromosome mutate(chromosome c) {
-    //TODO: Implement the mutation
+
+    chromosome mutated_c;
+    mutated_c.fitness = 0;
+
+    for (int i = 0; i < NB_GENES; i++) {
+        for (int j = 0; j < GENE_SIZE; j++) {
+            float wheel = rand_a_b(0, 1);
+
+            if (wheel <= MUTATION_RATE && c.genes[i][j])
+                mutated_c.genes[i][j] = 0;
+            else if (wheel <= MUTATION_RATE && !c.genes[i][j])
+                mutated_c.genes[i][j] = 1;
+            else
+                mutated_c.genes[i][j] = c.genes[i][j];
+        }
+    }
+
+    return mutated_c;
 }
 
 
@@ -236,16 +254,16 @@ int main() {
     select_chromosomes(generation, GENERATION_SIZE, population, POPULATION_SIZE);
 
 
-    int iteration = ITERATIONS;
+    int iteration = 0;
 
-    while(iteration--) {
+    while(1) {
 
         system("clear");
         printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);
-        printf("* Iteration: %d", iteration);
+        printf("* Iteration: %d\n", iteration++);
 
         /* Select GENERATION_SIZE individuals from population, based on their fitness or randomly */
-        printf("* Selecting %d individuals from generation %d...", GENERATION_SIZE, ITERATIONS - iteration);
+        printf("* Selecting %d individuals from generation %d...\n", GENERATION_SIZE, iteration);
 
         chromosome nextGeneration[GENERATION_SIZE] = {0}; //The offsprings of the (intermediate) generation
 
@@ -253,7 +271,7 @@ int main() {
 
         /* Crossover and mutate from the selection */
         for (int i = 0; i < GENERATION_SIZE; i++)
-            nextGeneration[i] = make_random_offspring(generation, GENERATION_SIZE);
+            nextGeneration[i] = mutate(make_random_offspring(generation, GENERATION_SIZE));
 
         /*
          * Update the fitness of the offsprings
@@ -275,6 +293,11 @@ int main() {
         /* Replace generation by the selection -> cross-breed of old generation + next generation */
         for (int i = 0; i < GENERATION_SIZE; i++)
             generation[i] = selection[i];
+
+        /* Update final mean score to give feedback */
+        printf("* Generation average score: %f\n", mean(generation, GENERATION_SIZE));
+
+        usleep(2000);
     }
 
     return 0;
