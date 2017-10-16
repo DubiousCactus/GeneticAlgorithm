@@ -12,16 +12,13 @@
 #include <zconf.h>
 
 
-#define POPULATION_SIZE 100
-#define GENERATION_SIZE 15
-#define ITERATIONS 50
-#define NB_GENES 8
+#define POPULATION_SIZE 1000
+#define GENERATION_SIZE 50
+#define NB_GENES 9
 #define GENE_SIZE 3
 #define CROSSOVER_MODE "SP" // SP:  Single Point, 2P: Two Point, U: Uniform
-#define MUTATION_RATE 0.1
+#define MUTATION_RATE 0.015
 
-#define GENE_X(gene) gene_coord(gene)[0]
-#define GENE_Y(gene) gene_coord(gene)[1]
 
 typedef struct {
     int x;
@@ -32,6 +29,7 @@ typedef struct {
 
 
 const city cities[8] = {
+    { .x = 4, .y = 2, .binaryIndex = { 0, 0, 0 }, .name = "Lille" },
     { .x = 4, .y = 6, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
     { .x = 7, .y = 7, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
     { .x = 6, .y = 14, .binaryIndex = { 0, 1, 1 }, .name =  "Lyon" },
@@ -43,10 +41,10 @@ const city cities[8] = {
 
 /*
  * Describes the order to visit cities:
- * A gene is a 3-bit array, a chromosome contains 8 genes for the 7 cities + the first one
+ * A gene is a 3-bit array, a chromosome contains 9 genes for the 8 cities + the first one
  * */
 typedef struct {
-    int genes[8][GENE_SIZE];
+    int genes[NB_GENES][GENE_SIZE];
     float fitness;
 } chromosome;
 
@@ -67,10 +65,8 @@ int bin_to_dec(int bin[GENE_SIZE]) {
 /* Generate bits to fill a gene */
 void make_gene(int *gene) {
 
-    for (int i = 0; i < GENE_SIZE; i++) {
-        //Currently generates both valid and invalid genes (same city 2+ times)
+    for (int i = 0; i < GENE_SIZE; i++)
         gene[i] = rand() % 2;
-    }
 }
 
 
@@ -84,6 +80,24 @@ void get_gene_coord(int gene[], int coord[]) {
 
     coord[0] = cities[geneValue].x;
     coord[1] = cities[geneValue].y;
+}
+
+
+int validate_chromosome(chromosome c) {
+
+    int isThereTwice = 0;
+
+    /* Check if a gene is present twice */
+    for (int i = 0; i < NB_GENES; i++) {
+        for (int j = 1; j < NB_GENES - 1; j++) { //Ignore the last one, which SHOULD be equal to the first one !
+            if (i != j && c.genes[i] == c.genes[j]) {
+                isThereTwice = 1;
+                continue;
+            }
+        }
+    }
+
+    return !isThereTwice;
 }
 
 /* Objective function: total length of the trip */
@@ -102,6 +116,9 @@ float score(chromosome c) {
                 + pow(fabs(geneCoord[1] - prevGeneCoord[1]), 2)
         );
     }
+
+    if (!validate_chromosome(c))
+        score = 0.1;
 
     return score;
 }
@@ -133,6 +150,19 @@ float fitness(chromosome c, chromosome *generation, int generationSize) {
 }
 
 
+float average_fitness(chromosome generation[], int size) {
+
+    float average_fitness = 0;
+
+    for (int i = 0; i < size; i++)
+        average_fitness += generation[i].fitness;
+
+    average_fitness /= size;
+
+    return average_fitness;
+}
+
+
 float rand_a_b(float a, float b) {
 
     return (rand() / (float) RAND_MAX) * (b - a) + a;
@@ -142,14 +172,20 @@ float rand_a_b(float a, float b) {
 void select_chromosomes(chromosome generation[], int toSize, chromosome population[], int fromSize) {
 
     chromosome c = { 0 };
-    int picked = 0;
     srand((unsigned)time(NULL));
+    int picked = 0;
+    float averageFitness = average_fitness(population, fromSize);
 
     for (int i = 0; i < toSize; i++) {
         picked = 0;
 
         while (!picked) {
             for (int j = i; j < fromSize; j++) {
+
+                /* Only select the fittest */
+                /*if (population[j].fitness < averageFitness)
+                    continue;*/
+
                 float wheel = rand_a_b(0, maxFitness);
 
                 if (wheel <= population[j].fitness) {
@@ -184,13 +220,14 @@ chromosome make_random_offspring(chromosome *candidates, int size) {
 
     if (strcmp(CROSSOVER_MODE, "SP") == 0) {
         /* Single point crossover */
-        int crossover_point = 1 + rand() % 7;
+        int crossover_point = 1 + rand() % (NB_GENES - 1);
+        //int crossover_point = NB_GENES / 2; //TODO: Decide !!
 
         for (int i = 0; i < crossover_point; i++)
             for (int j = 0; j < GENE_SIZE; j++)
                 kid.genes[i][j] = dad.genes[i][j];
 
-        for (int i = crossover_point; i < 8; i++)
+        for (int i = crossover_point; i < NB_GENES; i++)
             for (int j = 0; j < GENE_SIZE; j++)
                 kid.genes[i][j] = mom.genes[i][j];
 
@@ -211,6 +248,7 @@ chromosome mutate(chromosome c) {
 
     chromosome mutated_c;
     mutated_c.fitness = 0;
+    srand((unsigned)time(NULL));
 
     for (int i = 0; i < NB_GENES; i++) {
         for (int j = 0; j < GENE_SIZE; j++) {
@@ -236,14 +274,46 @@ int main() {
 
     printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);
 
-    for (int i = 0; i < POPULATION_SIZE; i++) {
+    //TODO: Try to generate a valid population first, and allow invalid chromosomes then
+    for (int p = 0; p < POPULATION_SIZE; p++) {
         chromosome c;
+        int invalid = 1;
+
+        /* Start from Lille, return to Lille */
+        /* TODO: Make this scalable (if we add new cities) */
+        c.genes[0][0] = c.genes[NB_GENES - 1][0] = 0;
+        c.genes[0][1] = c.genes[NB_GENES - 1][1] = 0;
+        c.genes[0][2] = c.genes[NB_GENES - 1][2] = 0;
+
+        /* Reset C */
+        for (int i = 1; i < NB_GENES - 1; i++)
+            for (int j = 0; j < GENE_SIZE; j++)
+                c.genes[i][j] = 0;
+
         c.fitness = 0;
 
-        for (int i = 0; i < 8; i++)
-            make_gene(c.genes[i]);
+        for (int i = 1; i < NB_GENES - 1; i++) {
 
-        population[i] = c;
+            invalid = 1;
+
+            while (invalid) {
+                invalid = 0;
+                make_gene(c.genes[i]);
+
+                /* Check validity */
+                for (int j = 0; j < i; j++) {
+                    if (j != i
+                        && (c.genes[j][0] == c.genes[i][0])
+                        && (c.genes[j][1] == c.genes[i][1])
+                        && (c.genes[j][2] == c.genes[i][2])) {
+                        invalid = 1;
+                        continue;
+                    }
+                }
+            }
+        }
+
+        population[p] = c;
     }
 
     /* Calculate fitness for each candidate in the population */
@@ -295,9 +365,9 @@ int main() {
             generation[i] = selection[i];
 
         /* Update final mean score to give feedback */
-        printf("* Generation average score: %f\n", mean(generation, GENERATION_SIZE));
 
-        usleep(2000);
+        printf("* Generation average score: %.2f\n", mean(generation, GENERATION_SIZE));
+
     }
 
     return 0;
