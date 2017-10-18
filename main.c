@@ -13,11 +13,11 @@
 
 
 #define POPULATION_SIZE 1000
-#define GENERATION_SIZE 50
+#define GENERATION_SIZE 100
 #define NB_GENES 9
 #define GENE_SIZE 3
 #define CROSSOVER_MODE "SP" // SP:  Single Point, 2P: Two Point, U: Uniform
-#define MUTATION_RATE 0.015
+#define MUTATION_RATE 0.5
 
 
 typedef struct {
@@ -92,7 +92,7 @@ int validate_chromosome(chromosome c) {
         for (int j = 1; j < NB_GENES - 1; j++) { //Ignore the last one, which SHOULD be equal to the first one !
             if (i != j && c.genes[i] == c.genes[j]) {
                 isThereTwice = 1;
-                continue;
+                break;
             }
         }
     }
@@ -182,13 +182,13 @@ void select_chromosomes(chromosome generation[], int toSize, chromosome populati
         while (!picked) {
             for (int j = i; j < fromSize; j++) {
 
-                /* Only select the fittest */
-                /*if (population[j].fitness < averageFitness)
+                /* Only select the less fit */
+                /*if (population[j].fitness > (averageFitness / 2))
                     continue;*/
 
-                float wheel = rand_a_b(0, maxFitness);
+                float wheel = rand_a_b(0, maxFitness * 2);
 
-                if (wheel <= population[j].fitness) {
+                if (wheel >= population[j].fitness) {
                     generation[i] = population[j];
                     picked = 1;
                 }
@@ -199,9 +199,73 @@ void select_chromosomes(chromosome generation[], int toSize, chromosome populati
 
 
 /*
+ * Crossover method based on subsets of parents.
+ * The offspring will be a valid chromosome.
+ */
+chromosome crossover(chromosome *candidates, int size) {
+
+    chromosome dad, mom, kid;
+    kid.fitness = 0;
+
+    int firstPick = (int) random() % size;
+    int secondPick = firstPick;
+
+    dad = candidates[firstPick];
+
+    while (secondPick == firstPick) secondPick = (int) random() % size;
+
+    mom = candidates[secondPick];
+
+    int a = (int) rand_a_b(1, NB_GENES - 1);
+    int b = (int) rand_a_b(a, NB_GENES - 1);
+
+    while (b < a) b = (int) rand_a_b(a, NB_GENES - 1);
+
+    int dadSubset[b - a + 1];
+    int k = 0;
+
+    for (int i = a; i <= b; i++) {
+        for (int j = 0; j < GENE_SIZE; j++)
+            kid.genes[i][j] = dad.genes[i][j]; //That's for dad
+
+        dadSubset[k++] = bin_to_dec(dad.genes[i]); //Keep track of the used cities
+    }
+
+    int skip = 0;
+    k = 0;
+
+    for (int i = 0; i < NB_GENES; i++) {
+        if (i >= a && i <= b) continue;
+
+        do {
+            skip = 0;
+
+            for (int j = 0; j < sizeof(dadSubset); j++) {
+                if (bin_to_dec(mom.genes[k]) == dadSubset[j]) {
+                    skip = 1;
+                    break;
+                }
+            }
+
+            if (skip) k++;
+        } while (skip);
+
+        for (int j = 0; j < GENE_SIZE; j++)
+            kid.genes[i][j] = mom.genes[k][j]; //That's for mom
+
+        k++;
+    }
+
+    return kid;
+}
+
+
+
+/*
  * Crossover of two randomly selected chromosomes from the given population
  * Returns the offspring
  */
+/*
 chromosome make_random_offspring(chromosome *candidates, int size) {
 
     chromosome dad, mom, kid;
@@ -219,9 +283,11 @@ chromosome make_random_offspring(chromosome *candidates, int size) {
 
 
     if (strcmp(CROSSOVER_MODE, "SP") == 0) {
-        /* Single point crossover */
-        int crossover_point = 1 + rand() % (NB_GENES - 1);
-        //int crossover_point = NB_GENES / 2; //TODO: Decide !!
+        */
+/* Single point crossover *//*
+
+        //int crossover_point = 1 + rand() % (NB_GENES - 1);
+        int crossover_point = NB_GENES / 2; //TODO: Decide !!
 
         for (int i = 0; i < crossover_point; i++)
             for (int j = 0; j < GENE_SIZE; j++)
@@ -232,19 +298,52 @@ chromosome make_random_offspring(chromosome *candidates, int size) {
                 kid.genes[i][j] = mom.genes[i][j];
 
     } else if (strcmp(CROSSOVER_MODE, "DP") == 0) {
-        /* Double point crossover */
+        */
+/* Double point crossover *//*
+
         //TODO
 
     } else if (strcmp(CROSSOVER_MODE, "U") == 0) {
-        /* Uniform crossover */
+        */
+/* Uniform crossover *//*
+
         //TODO
     }
 
     return kid;
 }
+*/
 
 
+/* Alternate mutation method: swap two points at random indexes
+ * This will ensure a valid mutated chromosome */
 chromosome mutate(chromosome c) {
+
+    srand((unsigned)time(NULL));
+
+    /* Spin the wheel to mutate */
+    if (rand_a_b(0, 1) > MUTATION_RATE)
+        return c;
+
+    int a = (int) rand_a_b(1, NB_GENES - 1); //Only swap between the start and end points
+    int b = a;
+    int temp[GENE_SIZE] = {0};
+
+    while (b == a) b = (int) rand_a_b(1, NB_GENES - 1); //Make sure the two indexes are different
+
+    /* Copy gene a into temp, b into a, and a into b*/
+    for (int i = 0; i < GENE_SIZE; i++) {
+        temp[i] = c.genes[a][i];
+        c.genes[a][i] = c.genes[b][i];
+        c.genes[b][i] = temp[i];
+    }
+
+    return c;
+}
+
+
+
+/*chromosome mutate(chromosome c) {
 
     chromosome mutated_c;
     mutated_c.fitness = 0;
@@ -264,7 +363,7 @@ chromosome mutate(chromosome c) {
     }
 
     return mutated_c;
-}
+}*/
 
 
 int main() {
@@ -274,7 +373,6 @@ int main() {
 
     printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);
 
-    //TODO: Try to generate a valid population first, and allow invalid chromosomes then
     for (int p = 0; p < POPULATION_SIZE; p++) {
         chromosome c;
         int invalid = 1;
@@ -307,7 +405,7 @@ int main() {
                         && (c.genes[j][1] == c.genes[i][1])
                         && (c.genes[j][2] == c.genes[i][2])) {
                         invalid = 1;
-                        continue;
+                        break;
                     }
                 }
             }
@@ -341,7 +439,7 @@ int main() {
 
         /* Crossover and mutate from the selection */
         for (int i = 0; i < GENERATION_SIZE; i++)
-            nextGeneration[i] = mutate(make_random_offspring(generation, GENERATION_SIZE));
+            nextGeneration[i] = mutate(crossover(generation, GENERATION_SIZE));
 
         /*
          * Update the fitness of the offsprings
