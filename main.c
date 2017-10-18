@@ -16,7 +16,6 @@
 #define GENERATION_SIZE 10
 #define NB_GENES 9
 #define GENE_SIZE 3
-#define CROSSOVER_MODE "SP" // SP:  Single Point, 2P: Two Point, U: Uniform
 #define MUTATION_RATE 0.015
 
 
@@ -154,7 +153,7 @@ chromosome fittest(chromosome generation[], int size) {
 
     chromosome fittest;
     fittest.fitness = 0;
-    
+
     for (int i = 0; i < size; i++)
         if (generation[i].fitness > fittest.fitness)
             fittest = generation[i];
@@ -162,18 +161,6 @@ chromosome fittest(chromosome generation[], int size) {
     return fittest;
 }
 
-
-float average_fitness(chromosome generation[], int size) {
-
-    float average_fitness = 0;
-
-    for (int i = 0; i < size; i++)
-        average_fitness += generation[i].fitness;
-
-    average_fitness /= size;
-
-    return average_fitness;
-}
 
 
 float rand_a_b(float a, float b) {
@@ -184,21 +171,14 @@ float rand_a_b(float a, float b) {
 
 void select_chromosomes(chromosome generation[], int toSize, chromosome population[], int fromSize) {
 
-    chromosome c = { 0 };
     srand((unsigned)time(NULL));
     int picked = 0;
-    float averageFitness = average_fitness(population, fromSize);
 
     for (int i = 0; i < toSize; i++) {
         picked = 0;
 
         while (!picked) {
             for (int j = i; j < fromSize; j++) {
-
-                /* Only select the less fit */
-                /*if (population[j].fitness > (averageFitness / 2))
-                    continue;*/
-
                 float wheel = rand_a_b(0, 1);
 
                 if (wheel <= population[j].fitness) {
@@ -274,58 +254,6 @@ chromosome crossover(chromosome *candidates, int size) {
 
 
 
-/*
- * Crossover of two randomly selected chromosomes from the given population
- * Returns the offspring
- */
-/*
-chromosome make_random_offspring(chromosome *candidates, int size) {
-
-    chromosome dad, mom, kid;
-    kid.fitness = 0;
-
-    int firstPick = random() % size;
-    int secondPick = random() % size;
-
-    dad = candidates[firstPick];
-
-    while (secondPick == firstPick)
-        secondPick = random() % size;
-
-    mom = candidates[secondPick];
-
-
-    if (strcmp(CROSSOVER_MODE, "SP") == 0) {
-        */
-/* Single point crossover *//*
-
-        //int crossover_point = 1 + rand() % (NB_GENES - 1);
-        int crossover_point = NB_GENES / 2; //TODO: Decide !!
-
-        for (int i = 0; i < crossover_point; i++)
-            for (int j = 0; j < GENE_SIZE; j++)
-                kid.genes[i][j] = dad.genes[i][j];
-
-        for (int i = crossover_point; i < NB_GENES; i++)
-            for (int j = 0; j < GENE_SIZE; j++)
-                kid.genes[i][j] = mom.genes[i][j];
-
-    } else if (strcmp(CROSSOVER_MODE, "DP") == 0) {
-        */
-/* Double point crossover *//*
-
-        //TODO
-
-    } else if (strcmp(CROSSOVER_MODE, "U") == 0) {
-        */
-/* Uniform crossover *//*
-
-        //TODO
-    }
-
-    return kid;
-}
-*/
 
 
 /* Alternate mutation method: swap two points at random indexes
@@ -358,29 +286,6 @@ chromosome mutate(chromosome c) {
     return c;
 }
 
-
-
-/*chromosome mutate(chromosome c) {
-
-    chromosome mutated_c;
-    mutated_c.fitness = 0;
-    srand((unsigned)time(NULL));
-
-    for (int i = 0; i < NB_GENES; i++) {
-        for (int j = 0; j < GENE_SIZE; j++) {
-            float wheel = rand_a_b(0, 1);
-
-            if (wheel <= MUTATION_RATE && c.genes[i][j])
-                mutated_c.genes[i][j] = 0;
-            else if (wheel <= MUTATION_RATE && !c.genes[i][j])
-                mutated_c.genes[i][j] = 1;
-            else
-                mutated_c.genes[i][j] = c.genes[i][j];
-        }
-    }
-
-    return mutated_c;
-}*/
 
 
 int main() {
@@ -436,8 +341,10 @@ int main() {
     select_chromosomes(generation, GENERATION_SIZE, population, POPULATION_SIZE);
 
     float firstSelectionScore = mean(generation, GENERATION_SIZE);
+    float scoreOfFittest = score(fittest(generation, GENERATION_SIZE));
 
     printf("* First selection average score: %.2f\n", firstSelectionScore);
+    printf("* Generation's fittest chromosome's score: %.2f\n", scoreOfFittest);
 
     int iteration = 0;
 
@@ -446,6 +353,7 @@ int main() {
         system("clear");
         printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);
         printf("* First selection average score: %.2f\n", firstSelectionScore);
+        printf("* Generation's fittest chromosome's score: %.2f\n", scoreOfFittest);
         printf("* Iteration: %d\n", iteration++);
 
         /* Select GENERATION_SIZE individuals from population, based on their fitness or randomly */
