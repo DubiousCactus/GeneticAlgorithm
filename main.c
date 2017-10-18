@@ -17,7 +17,7 @@
 #define NB_GENES 9
 #define GENE_SIZE 3
 #define CROSSOVER_MODE "SP" // SP:  Single Point, 2P: Two Point, U: Uniform
-#define MUTATION_RATE 0.5
+#define MUTATION_RATE 0.05
 
 
 typedef struct {
@@ -240,7 +240,7 @@ chromosome crossover(chromosome *candidates, int size) {
         do {
             skip = 0;
 
-            for (int j = 0; j < sizeof(dadSubset); j++) {
+            for (int j = 0; j < (b - a + 1); j++) {
                 if (bin_to_dec(mom.genes[k]) == dadSubset[j]) {
                     skip = 1;
                     break;
