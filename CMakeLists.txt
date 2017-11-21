@@ -7,4 +7,4 @@ set(SOURCE_FILES main.c)
 
 add_executable(GeneticAlgorithm ${SOURCE_FILES})
 
-target_link_libraries(GeneticAlgorithm m)
+target_link_libraries(GeneticAlgorithm m ncurses)

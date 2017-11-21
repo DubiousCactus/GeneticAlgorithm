@@ -10,6 +10,7 @@
 #include <memory.h>
 #include <time.h>
 #include <zconf.h>
+#include <ncurses.h>
 
 
 #define POPULATION_SIZE 100
@@ -27,16 +28,7 @@ typedef struct {
 } city;
 
 
-const city cities[8] = {
-    { .x = 4, .y = 2, .binaryIndex = { 0, 0, 0 }, .name = "Lille" },
-    { .x = 4, .y = 6, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
-    { .x = 7, .y = 7, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
-    { .x = 6, .y = 14, .binaryIndex = { 0, 1, 1 }, .name =  "Lyon" },
-    { .x = 10, .y = 22, .binaryIndex = { 1, 0, 0 }, .name = "Marseille" },
-    { .x = 2, .y = 9, .binaryIndex = { 1, 0, 1 }, .name = "Nantes" },
-    { .x = 1, .y = 11, .binaryIndex = { 1, 1, 0 }, .name = "La Rochelle" },
-    { .x = 3, .y = 12, .binaryIndex = { 1, 1, 1 }, .name = "Bordeaux" }
-};
+city cities[8];
 
 /*
  * Describes the order to visit cities:
@@ -49,6 +41,7 @@ typedef struct {
 
 
 float maxFitness = 0;
+WINDOW *visualization_window, *details_window;
 
 int bin_to_dec(int bin[GENE_SIZE]) {
 
@@ -286,14 +279,131 @@ chromosome mutate(chromosome c) {
     return c;
 }
 
+WINDOW *create_newwin(int height, int width, int starty, int startx)
+{	WINDOW *local_win;
+
+	local_win = newwin(height, width, starty, startx);
+	box(local_win, 0 , 0);		/* 0, 0 gives default characters
+					 * for the vertical and horizontal
+					 * lines			*/
+    refresh();
+	wrefresh(local_win);		/* Show that box 		*/
+
+	return local_win;
+}
+
+void destroy_win(WINDOW *local_win)
+{
+	/* box(local_win, ' ', ' '); : This won't produce the desired
+	 * result of erasing the window. It will leave it's four corners
+	 * and so an ugly remnant of window.
+	 */
+	wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+	/* The parameters taken are
+	 * 1. win: the window on which to operate
+	 * 2. ls: character to be used for the left side of the window
+	 * 3. rs: character to be used for the right side of the window
+	 * 4. ts: character to be used for the top side of the window
+	 * 5. bs: character to be used for the bottom side of the window
+	 * 6. tl: character to be used for the top left corner of the window
+	 * 7. tr: character to be used for the top right corner of the window
+	 * 8. bl: character to be used for the bottom left corner of the window
+	 * 9. br: character to be used for the bottom right corner of the window
+	 */
+	wrefresh(local_win);
+	delwin(local_win);
+}
+
+
+/* Draw the TSP graph based on the given chromosome */
+void visualize(chromosome journey)
+{
+    int prev_coord[2] = {-1};
+    for (int j = 0; j < NB_GENES; j++) {
+        int coord[2] = {0};
+        int gene[GENE_SIZE];
+        
+        for (int k = 0; k < GENE_SIZE; k++)
+           gene[k] = journey.genes[j][k];
+
+        get_gene_coord(gene, coord);
+
+        /* Draw the point (city) */
+        mvwprintw(visualization_window, coord[1], coord[0], cities[bin_to_dec(gene)].name);
+
+        if (prev_coord[0] != -1 && prev_coord[1] != -1) {
+            int from_y, to_y, from_x, to_x;
+            from_y = coord[1] - 1;
+            to_y = prev_coord[1] - 1;
+            from_x = coord[0] - 1;
+            to_x = prev_coord[0] - 1;
+
+            if (prev_coord[1] < coord[1]) {
+                from_y = prev_coord[1] + 1;
+                to_y = coord[1] - 1;
+            }
+
+            if (prev_coord[0] < coord[0]) {
+                from_x = prev_coord[0] + 1;
+                to_x = coord[0] - 1;
+            }
+
+            int drawing = 1, y = from_y, x = from_x;
+
+            while (drawing) {
+                mvwprintw(visualization_window, y, x, ".");
+
+                if (y < to_y) y++;
+                if (x < to_x) x++;
+
+                if (y >= to_y && x >= to_x) drawing = 0; //We're done !
+
+                usleep(5000);
+                wrefresh(visualization_window);
+                refresh();
+            }
+
+        }
+
+        prev_coord[0] = coord[0];
+        prev_coord[1] = coord[1];
+    }
+    
+    refresh();
+    wrefresh(visualization_window);
+}
+
 
 
 int main() {
 
+    /* Init ncurses */
+    initscr();
+    noecho();
+    cbreak();
+
+    int yMax, xMax;
+    getmaxyx(stdscr, yMax, xMax);
+
+    memcpy(cities, (city[]) {
+        { .x = xMax / 2, .y = yMax * 0.02, .binaryIndex = { 0, 0, 0 }, .name = "Lille" },
+        { .x = xMax / 2, .y = yMax * 0.2, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
+        { .x = xMax * 0.8, .y = yMax * 0.15, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
+        { .x = xMax * 0.7, .y = yMax * 0.65, .binaryIndex = { 0, 1, 1 }, .name =  "Lyon" },
+        { .x = xMax * 0.9, .y = yMax * 0.8, .binaryIndex = { 1, 0, 0 }, .name = "Marseille" },
+        { .x = xMax * 0.15, .y = yMax * 0.4, .binaryIndex = { 1, 0, 1 }, .name = "Nantes" },
+        { .x = xMax * 0.05, .y = yMax * 0.52, .binaryIndex = { 1, 1, 0 }, .name = "La Rochelle" },
+        { .x = xMax * 0.2, .y = yMax * 0.57, .binaryIndex = { 1, 1, 1 }, .name = "Bordeaux" }
+    }, sizeof cities);
+
+
+    visualization_window = create_newwin(yMax - 7, xMax - 2, 0, 1);
+    details_window = create_newwin(7, xMax - 2, yMax - 7, 1);
+
     chromosome population[POPULATION_SIZE];
     chromosome generation[GENERATION_SIZE];
 
-    printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);
+    /*printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);*/
 
     for (int p = 0; p < POPULATION_SIZE; p++) {
         chromosome c;
@@ -343,21 +453,21 @@ int main() {
     float firstSelectionScore = mean(generation, GENERATION_SIZE);
     float scoreOfFittest = score(fittest(generation, GENERATION_SIZE));
 
-    printf("* First selection average score: %.2f\n", firstSelectionScore);
-    printf("* Generation's fittest chromosome's score: %.2f\n", scoreOfFittest);
+    /*printf("* First selection average score: %.2f\n", firstSelectionScore);
+    printf("* Generation's fittest chromosome's score: %.2f\n", scoreOfFittest);*/
 
     int iteration = 0;
 
     while(iteration < 200) {
 
-        system("clear");
+        /*system("clear");
         printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);
         printf("* First selection average score: %.2f\n", firstSelectionScore);
         printf("* Generation's fittest chromosome's score: %.2f\n", scoreOfFittest);
         printf("* Iteration: %d\n", iteration++);
 
-        /* Select GENERATION_SIZE individuals from population, based on their fitness or randomly */
-        printf("* Selecting %d individuals from generation %d...\n", GENERATION_SIZE, iteration);
+        [> Select GENERATION_SIZE individuals from population, based on their fitness or randomly <]
+        printf("* Selecting %d individuals from generation %d...\n", GENERATION_SIZE, iteration);*/
 
         chromosome nextGeneration[GENERATION_SIZE] = {0}; //The offsprings of the (intermediate) generation
 
@@ -377,16 +487,26 @@ int main() {
         //select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
 
         /* Replace generation by the selection -> cross-breed of old generation + next generation */
-        for (int i = 0; i < GENERATION_SIZE; i++)
+        for (int i = 0; i < GENERATION_SIZE; i++) {
             generation[i] = selection[i];
+            visualize(generation[i]); //Visualize each chromosome of the generation
+            usleep(1000);
+        }
 
         /* Update final mean score to give feedback */
 
-        printf("* Generation average score: %.2f\n", mean(generation, GENERATION_SIZE));
-        printf("* Generation's fittest chromosome's score: %.2f\n", score(fittest(generation, GENERATION_SIZE)));
+        /*printf("* Generation average score: %.2f\n", mean(generation, GENERATION_SIZE));
+        printf("* Generation's fittest chromosome's score: %.2f\n", score(fittest(generation, GENERATION_SIZE)));*/
+
+        mvwprintw(details_window, 1, 1, "* Generation %d -> average score: %.2f", iteration++, mean(generation, GENERATION_SIZE));
+        mvwprintw(details_window, 2, 1, "                -> fittest chromosome's score: %.2f", score(fittest(generation, GENERATION_SIZE)));
+        wrefresh(details_window);
+        refresh();
 
         usleep(8000);
     }
+
+    endwin();
 
     return 0;
 }
