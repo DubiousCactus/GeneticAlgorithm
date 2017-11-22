@@ -307,7 +307,12 @@ void visualize(chromosome journey)
         /* Draw the point (city) */
         wattron(visualization_window, COLOR_PAIR(1));
         mvwprintw(visualization_window, coord[1], coord[0], cities[bin_to_dec(gene)].name);
-        mvwprintw(visualization_window, coord[1] + 1, coord[0] + (sizeof cities[bin_to_dec(gene)].name / sizeof *cities[bin_to_dec(gene)].name) / 2 - 1, "%d", j);
+
+        if ((mvwinch(visualization_window, coord[1] + 1, coord[0] + (sizeof cities[bin_to_dec(gene)].name / sizeof *cities[bin_to_dec(gene)].name) / 2 - 1) & A_CHARTEXT) == '0')
+            mvwprintw(visualization_window, coord[1] + 1, coord[0] + (sizeof cities[bin_to_dec(gene)].name / sizeof *cities[bin_to_dec(gene)].name) / 2 - 4, "0 - 8");
+        else
+            mvwprintw(visualization_window, coord[1] + 1, coord[0] + (sizeof cities[bin_to_dec(gene)].name / sizeof *cities[bin_to_dec(gene)].name) / 2 - 1, "%d", j);
+
         wattroff(visualization_window, COLOR_PAIR(1));
 
         if (prev_coord[0] != -1 && prev_coord[1] != -1) {
