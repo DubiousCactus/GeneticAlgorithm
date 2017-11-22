@@ -319,9 +319,11 @@ void destroy_win(WINDOW *local_win)
 void visualize(chromosome journey)
 {
     int prev_coord[2] = {-1};
+    int prev_gene[GENE_SIZE];
     for (int j = 0; j < NB_GENES; j++) {
         int coord[2] = {0};
         int gene[GENE_SIZE];
+        int not_drawing = 1;
         
         for (int k = 0; k < GENE_SIZE; k++)
            gene[k] = journey.genes[j][k];
@@ -330,9 +332,10 @@ void visualize(chromosome journey)
 
         /* Draw the point (city) */
         mvwprintw(visualization_window, coord[1], coord[0], cities[bin_to_dec(gene)].name);
+        mvwprintw(visualization_window, coord[1] + 1, coord[0] + (sizeof cities[bin_to_dec(gene)].name / sizeof *cities[bin_to_dec(gene)].name) / 2 - 1, "%d", j);
 
         if (prev_coord[0] != -1 && prev_coord[1] != -1) {
-            int from_y, to_y, from_x, to_x;
+            int from_y, to_y, from_x, to_x, reverse_x = 0;
             float slope, intercept, dx, dy;
             
             from_y = prev_coord[1];
@@ -340,27 +343,39 @@ void visualize(chromosome journey)
             from_x = prev_coord[0];
             to_x = coord[0];
 
+            if (from_x > to_x) {
+                from_x = coord[0];
+                to_x = prev_coord[0];
+                from_y = coord[1];
+                to_y = prev_coord[1];
+                reverse_x = 1;
+            }
+
             dx = to_x - from_x;
             dy = to_y - from_y;
             slope = dy / dx;
             intercept = from_y - slope * from_x;
 
-            for (int x = from_x; x < to_x; x++) {
-                if ((mvwinch(visualization_window, slope * x + intercept, x) & A_CHARTEXT) == ' ')
-                    mvwprintw(visualization_window, slope * x + intercept, x, ".");
+            int prev_y = -1, y = 0;
 
-                usleep(5000);
-                wrefresh(visualization_window);
-                refresh();
+            for (int x = from_x; x < to_x; x++) {
+                y = slope * x + intercept;
+                if ((mvwinch(visualization_window, y, x) & A_CHARTEXT) == ' ' && y != prev_y) {
+                    mvwprintw(visualization_window, y, x, "o");
+                    prev_y = y;
+                }
             }
         }
+        
+        for (int k = 0; k < GENE_SIZE; k++)
+           prev_gene[k] = gene[k];
 
         prev_coord[0] = coord[0];
         prev_coord[1] = coord[1];
     }
     
-    refresh();
     wrefresh(visualization_window);
+    refresh();
 }
 
 
@@ -376,14 +391,14 @@ int main() {
     getmaxyx(stdscr, yMax, xMax);
 
     memcpy(cities, (city[]) {
-        { .x = xMax / 2, .y = yMax * 0.01, .binaryIndex = { 0, 0, 0 }, .name = "Lille" },
-        { .x = xMax / 2, .y = yMax * 0.25, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
-        { .x = xMax * 0.8, .y = yMax * 0.1, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
+        { .x = xMax * 0.47, .y = yMax * 0.03, .binaryIndex = { 0, 0, 0 }, .name = "Lille" },
+        { .x = xMax * 0.51, .y = yMax * 0.15, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
+        { .x = xMax * 0.8, .y = yMax * 0.06, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
         { .x = xMax * 0.7, .y = yMax * 0.65, .binaryIndex = { 0, 1, 1 }, .name =  "Lyon" },
         { .x = xMax * 0.9, .y = yMax * 0.8, .binaryIndex = { 1, 0, 0 }, .name = "Marseille" },
-        { .x = xMax * 0.15, .y = yMax * 0.4, .binaryIndex = { 1, 0, 1 }, .name = "Nantes" },
-        { .x = xMax * 0.05, .y = yMax * 0.55, .binaryIndex = { 1, 1, 0 }, .name = "La Rochelle" },
-        { .x = xMax * 0.2, .y = yMax * 0.58, .binaryIndex = { 1, 1, 1 }, .name = "Bordeaux" }
+        { .x = xMax * 0.15, .y = yMax * 0.3, .binaryIndex = { 1, 0, 1 }, .name = "Nantes" },
+        { .x = xMax * 0.05, .y = yMax * 0.42, .binaryIndex = { 1, 1, 0 }, .name = "La Rochelle" },
+        { .x = xMax * 0.2, .y = yMax * 0.59, .binaryIndex = { 1, 1, 1 }, .name = "Bordeaux" }
     }, sizeof cities);
 
 
@@ -476,24 +491,29 @@ int main() {
         select_chromosomes(selection, GENERATION_SIZE, nextGeneration, GENERATION_SIZE);
         //select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
 
+        mvwprintw(details_window, 1, 1, "* Generation %d -> chromosome 0", iteration);
+        visualize(selection[0]); //Visualize each chromosome of the generation
         /* Replace generation by the selection -> cross-breed of old generation + next generation */
-        for (int i = 0; i < GENERATION_SIZE; i++) {
+        /*for (int i = 0; i < GENERATION_SIZE; i++) {
             generation[i] = selection[i];
             visualize(generation[i]); //Visualize each chromosome of the generation
             usleep(50000);
-        }
+        }*/
 
         /* Update final mean score to give feedback */
 
         /*printf("* Generation average score: %.2f\n", mean(generation, GENERATION_SIZE));
         printf("* Generation's fittest chromosome's score: %.2f\n", score(fittest(generation, GENERATION_SIZE)));*/
 
-        mvwprintw(details_window, 1, 1, "* Generation %d -> average score: %.2f", iteration++, mean(generation, GENERATION_SIZE));
-        mvwprintw(details_window, 2, 1, "                -> fittest chromosome's score: %.2f", score(fittest(generation, GENERATION_SIZE)));
+        mvwprintw(details_window, 2, 1, "* Generation %d -> average score: %.2f", iteration++, mean(generation, GENERATION_SIZE));
+        mvwprintw(details_window, 3, 1, "               -> fittest chromosome's score: %.2f", score(fittest(generation, GENERATION_SIZE)));
+
         wrefresh(details_window);
         refresh();
 
-        usleep(8000);
+        sleep(1);
+        wclear(visualization_window);
+        usleep(1000);
     }
 
     endwin();
