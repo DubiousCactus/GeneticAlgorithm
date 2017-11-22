@@ -479,14 +479,13 @@ int main() {
 
     while(iteration < 200) {
 
-        /*system("clear");
-        printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);
-        printf("* First selection average score: %.2f\n", firstSelectionScore);
-        printf("* Generation's fittest chromosome's score: %.2f\n", scoreOfFittest);
-        printf("* Iteration: %d\n", iteration++);
+        mvwprintw(details_window, 1, 1, "* Generating %d candidates for base population...\n", POPULATION_SIZE);
+        mvwprintw(details_window, 2, 1, "* First selection average score: %.2f\n", firstSelectionScore);
+        mvwprintw(details_window, 3, 1, "* Base generation's fittest chromosome's score: %.2f\n", scoreOfFittest);
+        mvwprintw(details_window, 4, 1, "* Iteration: %d\n", iteration++);
 
-        [> Select GENERATION_SIZE individuals from population, based on their fitness or randomly <]
-        printf("* Selecting %d individuals from generation %d...\n", GENERATION_SIZE, iteration);*/
+        /* Select GENERATION_SIZE individuals from population, based on their fitness or randomly */
+        mvwprintw(details_window, 5, 1, "* Selecting %d individuals from generation %d...\n", GENERATION_SIZE, iteration);
 
         chromosome nextGeneration[GENERATION_SIZE] = {0}; //The offsprings of the (intermediate) generation
 
@@ -502,34 +501,27 @@ int main() {
          * Select new generation, based on the offsprings and the parent generation,
          * and the fitness of their chromosomes
          */
-        select_chromosomes(selection, GENERATION_SIZE, nextGeneration, GENERATION_SIZE);
-        //select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
+        select_chromosomes(selection, GENERATION_SIZE / 2, nextGeneration, GENERATION_SIZE);
+        select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
 
-        mvwprintw(details_window, 1, 1, "* Generation %d -> chromosome 0", iteration);
-        visualize(selection[0]); //Visualize each chromosome of the generation
         /* Replace generation by the selection -> cross-breed of old generation + next generation */
-        /*for (int i = 0; i < GENERATION_SIZE; i++) {
+        for (int i = 0; i < GENERATION_SIZE; i++) {
+            visualize(selection[i]);
             generation[i] = selection[i];
-            visualize(generation[i]); //Visualize each chromosome of the generation
-            usleep(50000);
-        }*/
+            wrefresh(visualization_window);
+            usleep(100 * 100);
+            werase(visualization_window);
+            box(visualization_window, 0 , 0);
+        }
+
+        /*visualize(fittest(generation, GENERATION_SIZE));*/
 
         /* Update final mean score to give feedback */
-
-        /*printf("* Generation average score: %.2f\n", mean(generation, GENERATION_SIZE));
-        printf("* Generation's fittest chromosome's score: %.2f\n", score(fittest(generation, GENERATION_SIZE)));*/
-
-        mvwprintw(details_window, 2, 1, "* Generation %d -> average score: %.2f", iteration++, mean(generation, GENERATION_SIZE));
-        mvwprintw(details_window, 3, 1, "               -> fittest chromosome's score: %.2f", score(fittest(generation, GENERATION_SIZE)));
+        mvwprintw(details_window, 1, 100, "* Generation %d -> average score: %.2f", iteration, mean(generation, GENERATION_SIZE));
+        mvwprintw(details_window, 2, 100, "* Generation %d -> fittest chromosome's score: %.2f", iteration, score(fittest(generation, GENERATION_SIZE)));
 
         wrefresh(details_window);
-        wrefresh(visualization_window);
         refresh();
-
-        sleep(1);
-        werase(visualization_window);
-	box(visualization_window, 0 , 0);
-        usleep(1000);
     }
 
     endwin();
