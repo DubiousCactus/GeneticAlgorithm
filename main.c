@@ -17,7 +17,8 @@
 #define GENERATION_SIZE 10
 #define NB_GENES 9
 #define GENE_SIZE 3
-#define MUTATION_RATE 0.015
+#define MUTATION_RATE 0.4
+#define NB_ITERATIONS 300
 
 
 typedef struct {
@@ -455,7 +456,7 @@ int main() {
 
     int iteration = 0;
 
-    while(iteration < 200) {
+    while(iteration < NB_ITERATIONS) {
 
         mvwprintw(details_window, 1, 1, "* Generating %d candidates for base population...\n", POPULATION_SIZE);
         mvwprintw(details_window, 2, 1, "* First selection average score: %.2f\n", firstSelectionScore);
