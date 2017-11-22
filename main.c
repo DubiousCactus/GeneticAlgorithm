@@ -318,6 +318,7 @@ void destroy_win(WINDOW *local_win)
 /* Draw the TSP graph based on the given chromosome */
 void visualize(chromosome journey)
 {
+
     int prev_coord[2] = {-1};
     int prev_gene[GENE_SIZE];
     for (int j = 0; j < NB_GENES; j++) {
@@ -331,8 +332,10 @@ void visualize(chromosome journey)
         get_gene_coord(gene, coord);
 
         /* Draw the point (city) */
+        wattron(visualization_window, COLOR_PAIR(1));
         mvwprintw(visualization_window, coord[1], coord[0], cities[bin_to_dec(gene)].name);
         mvwprintw(visualization_window, coord[1] + 1, coord[0] + (sizeof cities[bin_to_dec(gene)].name / sizeof *cities[bin_to_dec(gene)].name) / 2 - 1, "%d", j);
+        wattroff(visualization_window, COLOR_PAIR(1));
 
         if (prev_coord[0] != -1 && prev_coord[1] != -1) {
             int from_y, to_y, from_x, to_x, reverse_x = 0;
@@ -358,6 +361,7 @@ void visualize(chromosome journey)
 
             int prev_y = -1, y = 0;
 
+            wattron(visualization_window, COLOR_PAIR(2));
             for (int x = from_x; x < to_x; x++) {
                 y = slope * x + intercept;
                 if ((mvwinch(visualization_window, y, x) & A_CHARTEXT) == ' ' && y != prev_y) {
@@ -365,6 +369,7 @@ void visualize(chromosome journey)
                     prev_y = y;
                 }
             }
+            wattroff(visualization_window, COLOR_PAIR(2));
         }
         
         for (int k = 0; k < GENE_SIZE; k++)
@@ -374,8 +379,6 @@ void visualize(chromosome journey)
         prev_coord[1] = coord[1];
     }
     
-    wrefresh(visualization_window);
-    refresh();
 }
 
 
@@ -386,6 +389,17 @@ int main() {
     initscr();
     noecho();
     cbreak();
+
+    if(has_colors() == FALSE)
+    {
+        endwin();
+        printf("Your terminal does not support color\n");
+        exit(1);
+    }
+
+    start_color();
+    init_pair(1, COLOR_BLUE, COLOR_YELLOW);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
 
     int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
@@ -509,6 +523,7 @@ int main() {
         mvwprintw(details_window, 3, 1, "               -> fittest chromosome's score: %.2f", score(fittest(generation, GENERATION_SIZE)));
 
         wrefresh(details_window);
+        wrefresh(visualization_window);
         refresh();
 
         sleep(1);
