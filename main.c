@@ -333,36 +333,26 @@ void visualize(chromosome journey)
 
         if (prev_coord[0] != -1 && prev_coord[1] != -1) {
             int from_y, to_y, from_x, to_x;
-            from_y = coord[1] - 1;
-            to_y = prev_coord[1] - 1;
-            from_x = coord[0] - 1;
-            to_x = prev_coord[0] - 1;
+            float slope, intercept, dx, dy;
+            
+            from_y = prev_coord[1];
+            to_y = coord[1];
+            from_x = prev_coord[0];
+            to_x = coord[0];
 
-            if (prev_coord[1] < coord[1]) {
-                from_y = prev_coord[1] + 1;
-                to_y = coord[1] - 1;
-            }
+            dx = to_x - from_x;
+            dy = to_y - from_y;
+            slope = dy / dx;
+            intercept = from_y - slope * from_x;
 
-            if (prev_coord[0] < coord[0]) {
-                from_x = prev_coord[0] + 1;
-                to_x = coord[0] - 1;
-            }
-
-            int drawing = 1, y = from_y, x = from_x;
-
-            while (drawing) {
-                mvwprintw(visualization_window, y, x, ".");
-
-                if (y < to_y) y++;
-                if (x < to_x) x++;
-
-                if (y >= to_y && x >= to_x) drawing = 0; //We're done !
+            for (int x = from_x; x < to_x; x++) {
+                if ((mvwinch(visualization_window, slope * x + intercept, x) & A_CHARTEXT) == ' ')
+                    mvwprintw(visualization_window, slope * x + intercept, x, ".");
 
                 usleep(5000);
                 wrefresh(visualization_window);
                 refresh();
             }
-
         }
 
         prev_coord[0] = coord[0];
@@ -386,14 +376,14 @@ int main() {
     getmaxyx(stdscr, yMax, xMax);
 
     memcpy(cities, (city[]) {
-        { .x = xMax / 2, .y = yMax * 0.02, .binaryIndex = { 0, 0, 0 }, .name = "Lille" },
-        { .x = xMax / 2, .y = yMax * 0.2, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
-        { .x = xMax * 0.8, .y = yMax * 0.15, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
+        { .x = xMax / 2, .y = yMax * 0.01, .binaryIndex = { 0, 0, 0 }, .name = "Lille" },
+        { .x = xMax / 2, .y = yMax * 0.25, .binaryIndex = { 0, 0, 1 }, .name = "Paris" },
+        { .x = xMax * 0.8, .y = yMax * 0.1, .binaryIndex = { 0, 1, 0 }, .name = "Reims" },
         { .x = xMax * 0.7, .y = yMax * 0.65, .binaryIndex = { 0, 1, 1 }, .name =  "Lyon" },
         { .x = xMax * 0.9, .y = yMax * 0.8, .binaryIndex = { 1, 0, 0 }, .name = "Marseille" },
         { .x = xMax * 0.15, .y = yMax * 0.4, .binaryIndex = { 1, 0, 1 }, .name = "Nantes" },
-        { .x = xMax * 0.05, .y = yMax * 0.52, .binaryIndex = { 1, 1, 0 }, .name = "La Rochelle" },
-        { .x = xMax * 0.2, .y = yMax * 0.57, .binaryIndex = { 1, 1, 1 }, .name = "Bordeaux" }
+        { .x = xMax * 0.05, .y = yMax * 0.55, .binaryIndex = { 1, 1, 0 }, .name = "La Rochelle" },
+        { .x = xMax * 0.2, .y = yMax * 0.58, .binaryIndex = { 1, 1, 1 }, .name = "Bordeaux" }
     }, sizeof cities);
 
 
@@ -490,7 +480,7 @@ int main() {
         for (int i = 0; i < GENERATION_SIZE; i++) {
             generation[i] = selection[i];
             visualize(generation[i]); //Visualize each chromosome of the generation
-            usleep(1000);
+            usleep(50000);
         }
 
         /* Update final mean score to give feedback */
