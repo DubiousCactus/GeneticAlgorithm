@@ -527,7 +527,8 @@ int main() {
         refresh();
 
         sleep(1);
-        wclear(visualization_window);
+        werase(visualization_window);
+	box(visualization_window, 0 , 0);
         usleep(1000);
     }
 
