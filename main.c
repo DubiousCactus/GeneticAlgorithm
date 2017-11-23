@@ -204,6 +204,7 @@ void select_chromosomes(chromosome generation[], int toSize, chromosome populati
         picked = 0;
 
         while (!picked) {
+            if (left_at >= 50) left_at = 0;
             for (int j = left_at; j < fromSize; j++, left_at++) {
                 float wheel = rand_a_b(0, 1);
 
