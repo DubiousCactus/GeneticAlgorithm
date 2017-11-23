@@ -12,12 +12,11 @@
 #include <zconf.h>
 #include <ncurses.h>
 
-
-#define POPULATION_SIZE 100
-#define GENERATION_SIZE 10
+#define POPULATION_SIZE 300
+#define GENERATION_SIZE 50
 #define NB_GENES 9
 #define GENE_SIZE 3
-#define MUTATION_RATE 0.4
+#define MUTATION_RATE 0.5
 #define NB_ITERATIONS 300
 
 
@@ -160,6 +159,41 @@ chromosome fittest(chromosome generation[], int size) {
 float rand_a_b(float a, float b) {
 
     return (rand() / (float) RAND_MAX) * (b - a) + a;
+}
+
+
+void quick_sort(chromosome array[], int left, int right) {
+    
+    int i = left, j = right;
+    chromosome tmp;
+    chromosome pivot = array[(left + right) / 2];
+
+    while (i <= j) {
+        while (array[i].fitness < pivot.fitness)
+            i++;
+        while (array[j].fitness > pivot.fitness)
+            j--;
+        if (i <= j) {
+            tmp = array[i];
+            array[i] = array[j];
+            array[j] = tmp;
+            i++; j--;
+        }
+    }
+
+    if (left < j)
+        quick_sort(array, left, j);
+    if (right > i)
+        quick_sort(array, i, right);
+}
+
+
+void select_fittest_chromosomes(chromosome generation[], int toSize, chromosome population[], int fromSize) {
+
+    quick_sort(population, 0, fromSize - 1);
+
+    for (int i = toSize; i > 0; i--)
+        generation[toSize - i] = population[i];
 }
 
 
@@ -379,6 +413,8 @@ int main() {
     start_color();
     init_pair(1, COLOR_BLUE, COLOR_YELLOW);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
+    init_pair(3, COLOR_WHITE, COLOR_RED);
+    init_pair(4, COLOR_RED, COLOR_RED);
 
     int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
@@ -481,14 +517,15 @@ int main() {
          * and the fitness of their chromosomes
          */
         select_chromosomes(selection, GENERATION_SIZE / 2, nextGeneration, GENERATION_SIZE);
-        select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
+        select_fittest_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
+        /*select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);*/
 
         /* Replace generation by the selection -> cross-breed of old generation + next generation */
         for (int i = 0; i < GENERATION_SIZE; i++) {
             visualize(selection[i]);
             generation[i] = selection[i];
             wrefresh(visualization_window);
-            usleep(100 * 100);
+            usleep(1 * 1000);
             werase(visualization_window);
             box(visualization_window, 0 , 0);
         }
@@ -499,6 +536,18 @@ int main() {
 
         wrefresh(details_window);
         refresh();
+    }
+
+    while(1) {
+        wattron(visualization_window, COLOR_PAIR(3));
+        mvwprintw(visualization_window, yMax * 0.3, xMax / 2 - 2, "DONE");
+        wrefresh(visualization_window);
+        refresh();
+        usleep(500 * 1000);
+        wattron(visualization_window, COLOR_PAIR(4));
+        mvwprintw(visualization_window, yMax * 0.3, xMax / 2 - 2, "DONE");
+        wrefresh(visualization_window);
+        usleep(500 * 1000);
     }
 
     delwin(visualization_window);
