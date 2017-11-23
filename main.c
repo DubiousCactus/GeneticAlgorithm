@@ -12,11 +12,11 @@
 #include <zconf.h>
 #include <ncurses.h>
 
-#define POPULATION_SIZE 300
+#define POPULATION_SIZE 1000
 #define GENERATION_SIZE 50
 #define NB_GENES 9
 #define GENE_SIZE 3
-#define MUTATION_RATE 0.5
+#define MUTATION_RATE 0.1
 #define NB_ITERATIONS 300
 
 
@@ -37,6 +37,7 @@ city cities[8];
 typedef struct {
     int genes[NB_GENES][GENE_SIZE];
     float fitness;
+    float score;
 } chromosome;
 
 
@@ -129,16 +130,14 @@ float mean(chromosome *generation, int size) {
     return mean;
 }
 
-/* Objective score function: 1 / score */
-float fitness(chromosome c) {
+/* Objective score function: score / maxScore */
+float fitness(chromosome c, float minScore, float maxScore) {
 
-    float fitness = 1 / score(c);
+    /* Map [minScore; maxScore] to [0; 1] */
+    float mappedFitness = (c.score - minScore) / (maxScore - minScore) * (1 - 0) + 0;
 
-    /* Store the max fitness of current generation to adapt our random pick */
-    if (fitness > maxFitness)
-        maxFitness = fitness;
-
-    return fitness;
+    /* Then "invert": low becomes high, and high becomes low */
+    return fabsf((mappedFitness - 1) / 1);
 }
 
 
@@ -199,20 +198,23 @@ void select_fittest_chromosomes(chromosome generation[], int toSize, chromosome 
 
 void select_chromosomes(chromosome generation[], int toSize, chromosome population[], int fromSize) {
 
-    srand((unsigned)time(NULL));
-    int picked = 0;
+    int picked = 0, left_at = 0;
 
     for (int i = 0; i < toSize; i++) {
         picked = 0;
 
         while (!picked) {
-            for (int j = i; j < fromSize; j++) {
+            for (int j = left_at; j < fromSize; j++, left_at++) {
                 float wheel = rand_a_b(0, 1);
 
                 if (wheel <= population[j].fitness) {
                     generation[i] = population[j];
                     picked = 1;
+                    left_at++;
+                    break;
                 }
+
+                if (j >= fromSize) j = left_at = 0;
             }
         }
     }
@@ -285,11 +287,9 @@ chromosome crossover(chromosome *candidates, int size) {
  * This will ensure a valid mutated chromosome */
 chromosome mutate(chromosome c) {
 
-    srand((unsigned)time(NULL));
-
     /* Spin the wheel to mutate */
     if (rand_a_b(0, 1) > MUTATION_RATE) {
-        c.fitness = fitness(c);
+        c.score = score(c);
         return c;
     }
 
@@ -306,7 +306,7 @@ chromosome mutate(chromosome c) {
         c.genes[b][i] = temp[i];
     }
 
-    c.fitness = fitness(c);
+    c.score = score(c);
 
     return c;
 }
@@ -398,6 +398,8 @@ void visualize(chromosome journey)
 
 int main() {
 
+    srand((unsigned) time(NULL));
+
     /* Init ncurses */
     initscr();
     noecho();
@@ -415,7 +417,6 @@ int main() {
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
     init_pair(3, COLOR_WHITE, COLOR_RED);
     init_pair(4, COLOR_RED, COLOR_RED);
-
     int yMax, xMax;
     getmaxyx(stdscr, yMax, xMax);
 
@@ -437,7 +438,7 @@ int main() {
     chromosome population[POPULATION_SIZE];
     chromosome generation[GENERATION_SIZE];
 
-    /*printf("* Generating %d candidates for base population...\n", POPULATION_SIZE);*/
+    float maxScore = 0, minScore = 1000;
 
     for (int p = 0; p < POPULATION_SIZE; p++) {
         chromosome c;
@@ -476,10 +477,19 @@ int main() {
             }
         }
 
-        c.fitness = fitness(c);
+        c.score = score(c);
+
+        if (c.score > maxScore)
+            maxScore = c.score;
+        if (c.score < minScore)
+            minScore = c.score;
 
         population[p] = c;
     }
+
+    /* Calculate fitness of population individuals */
+    for (int i = 0; i < POPULATION_SIZE; i++)
+        population[i].fitness = fitness(population[i], minScore, maxScore);
 
     /* Selecting original candidates */
     select_chromosomes(generation, GENERATION_SIZE, population, POPULATION_SIZE);
@@ -505,10 +515,20 @@ int main() {
         chromosome nextGeneration[GENERATION_SIZE] = {0}; //The offsprings of the (intermediate) generation
 
         maxFitness = 0;
+        minScore = 1000;
+        maxScore = 0;
 
         /* Crossover and mutate from the selection */
-        for (int i = 0; i < GENERATION_SIZE; i++)
+        for (int i = 0; i < GENERATION_SIZE; i++) {
             nextGeneration[i] = mutate(crossover(generation, GENERATION_SIZE));
+
+            if (nextGeneration[i].score > maxScore) maxScore = nextGeneration[i].score;
+            if (nextGeneration[i].score < minScore) minScore = nextGeneration[i].score;
+        }
+
+        /* Calculate fitness of next generation's individuals */
+        for (int i = 0; i < GENERATION_SIZE; i++)
+            nextGeneration[i].fitness = fitness(nextGeneration[i], minScore, maxScore);
 
         chromosome selection[GENERATION_SIZE] = {0}; //Selection of nextGeneration (offsprings) + base generation
 
@@ -517,15 +537,16 @@ int main() {
          * and the fitness of their chromosomes
          */
         select_chromosomes(selection, GENERATION_SIZE / 2, nextGeneration, GENERATION_SIZE);
-        select_fittest_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
-        /*select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);*/
+        /*select_fittest_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);*/
+        select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
 
         /* Replace generation by the selection -> cross-breed of old generation + next generation */
         for (int i = 0; i < GENERATION_SIZE; i++) {
             visualize(selection[i]);
             generation[i] = selection[i];
             wrefresh(visualization_window);
-            usleep(1 * 1000);
+            refresh();
+            sleep(1);
             werase(visualization_window);
             box(visualization_window, 0 , 0);
         }
