@@ -16,7 +16,7 @@
 #define GENERATION_SIZE 50
 #define NB_GENES 9
 #define GENE_SIZE 3
-#define MUTATION_RATE 0.1
+#define MUTATION_RATE 0.015
 #define NB_ITERATIONS 300
 
 
@@ -546,7 +546,7 @@ int main() {
             generation[i] = selection[i];
             wrefresh(visualization_window);
             refresh();
-            sleep(1);
+            usleep(10 * 1000);
             werase(visualization_window);
             box(visualization_window, 0 , 0);
         }
