@@ -16,7 +16,7 @@
 #define GENERATION_SIZE 50
 #define NB_GENES 9
 #define GENE_SIZE 3
-#define MUTATION_RATE 0.015
+#define MUTATION_RATE 0.03
 #define NB_ITERATIONS 300
 
 
@@ -538,8 +538,8 @@ int main() {
          * and the fitness of their chromosomes
          */
         select_chromosomes(selection, GENERATION_SIZE / 2, nextGeneration, GENERATION_SIZE);
-        /*select_fittest_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);*/
-        select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
+		/*select_fittest_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);*/
+		select_chromosomes(&selection[GENERATION_SIZE / 2], GENERATION_SIZE / 2, generation, GENERATION_SIZE);
 
         /* Replace generation by the selection -> cross-breed of old generation + next generation */
         for (int i = 0; i < GENERATION_SIZE; i++) {
@@ -547,7 +547,6 @@ int main() {
             generation[i] = selection[i];
             wrefresh(visualization_window);
             refresh();
-            usleep(10 * 1000);
             werase(visualization_window);
             box(visualization_window, 0 , 0);
         }
